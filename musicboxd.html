@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musicboxd</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #1a202c; color: white; text-align: center; }
+        .header { display: flex; align-items: center; padding: 10px; margin-left: 50px; }
+        .logo { height: 50px; margin-right: 20px; }
+        .star-container { position: absolute; top: 10px; right: 20px; }
+        .star { font-size: 2rem; cursor: pointer; color: gray; position: relative; display: inline-block; user-select: none; }
+        .star.selected { color: gold; }
+        .star.half::after {
+            content: '\2605';
+            position: absolute;
+            left: 0;
+            width: 50%;
+            overflow: hidden;
+            color: gold;
+        }
+        .album-list, .rated-albums { margin-top: 20px; }
+        .album { cursor: pointer; padding: 10px; }
+        nav { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+        .hidden { display: none; }
+        .wiki-button, .youtube-button { margin-left: 10px; padding: 5px; color: white; border: none; cursor: pointer; text-decoration: none; }
+        .wiki-button { background-color: #4CAF50; }
+        .youtube-button { background-color: #FF0000; }
+        .search-bar { margin-bottom: 10px; padding: 5px; width: 50%; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="letterboxd_music_v8.png" alt="Musicboxd Logo" class="logo">
+        <h1>Musicboxd</h1>
+    </div>
+    <nav>
+        <button onclick="showTab('rate')">Rate Albums</button>
+        <button onclick="showTab('rated')">Rated Albums</button>
+    </nav>
+    <input type="text" id="search" class="search-bar" placeholder="Search for an album..." oninput="filterAlbums()">
+    <div id="rate" class="tab">
+        <h2 id="rate-text">Rate an Album</h2>
+        <div id="album-list" class="album-list"></div>
+        <div id="star-rating" class="hidden star-container">
+            <span class="star" data-value="1">★</span>
+            <span class="star" data-value="2">★</span>
+            <span class="star" data-value="3">★</span>
+            <span class="star" data-value="4">★</span>
+            <span class="star" data-value="5">★</span>
+        </div>
+    </div>
+    
+    <div id="rated" class="tab hidden">
+        <h2>Rated Albums</h2>
+        <div id="rated-albums" class="rated-albums"></div>
+    </div>
+    
+    <script>
+        const albums = [
+            { title: "Abbey Road - The Beatles", link: "https://en.wikipedia.org/wiki/Abbey_Road", youtube: "https://www.youtube.com/watch?v=usNsCeOV4GM" },
+            { title: "Back in Black - AC/DC", link: "https://en.wikipedia.org/wiki/Back_in_Black", youtube: "https://www.youtube.com/watch?v=pAgnJDJN4VA" },
+            { title: "Born to Run - Bruce Springsteen", link: "https://en.wikipedia.org/wiki/Born_to_Run", youtube: "https://www.youtube.com/watch?v=f3t9SfrfDZM" },
+            { title: "Dark Side of the Moon - Pink Floyd", link: "https://en.wikipedia.org/wiki/The_Dark_Side_of_the_Moon", youtube: "https://www.youtube.com/watch?v=DLOth-BuCNY" }
+        ];
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden'));
+            document.getElementById(tab).classList.remove('hidden');
+            if (tab === 'rated') displayRatedAlbums();
+        }
+
+        function filterAlbums() {
+            const searchValue = document.getElementById("search").value.toLowerCase();
+            document.querySelectorAll(".album").forEach(album => {
+                album.style.display = album.textContent.toLowerCase().includes(searchValue) ? "block" : "none";
+            });
+        }
+
+        function displayAlbums() {
+            const albumList = document.getElementById("album-list");
+            albumList.innerHTML = "";
+            albums.forEach(album => {
+                const albumDiv = document.createElement("div");
+                albumDiv.classList.add("album");
+                albumDiv.textContent = album.title;
+                albumDiv.onclick = () => {
+                    currentAlbum = album.title;
+                    document.getElementById("star-rating").classList.remove("hidden");
+                    rating = ratings[currentAlbum] || 0;
+                    updateStars();
+                };
+                albumList.appendChild(albumDiv);
+            });
+        }
+
+        function displayRatedAlbums() {
+            const ratedAlbums = document.getElementById("rated-albums");
+            ratedAlbums.innerHTML = "";
+            for (const album of albums) {
+                if (ratings[album.title]) {
+                    const ratedDiv = document.createElement("div");
+                    ratedDiv.innerHTML = `${album.title} - ${ratings[album.title]}★ 
+                        <a class='wiki-button' href='${album.link}' target='_blank'>Wikipedia</a>
+                        <a class='youtube-button' href='${album.youtube}' target='_blank'>YouTube</a>`;
+                    ratedAlbums.appendChild(ratedDiv);
+                }
+            }
+        }
+
+        let currentAlbum = "";
+        let rating = 0;
+        const ratings = {};
+        const stars = document.querySelectorAll(".star");
+
+        function updateStars() {
+            stars.forEach(star => {
+                const starValue = parseFloat(star.getAttribute("data-value"));
+                star.classList.remove("selected", "half");
+                if (starValue <= Math.floor(rating)) {
+                    star.classList.add("selected");
+                } else if (starValue === Math.ceil(rating) && rating % 1 !== 0) {
+                    star.classList.add("half");
+                }
+            });
+        }
+
+        stars.forEach(star => {
+            star.addEventListener("click", function() {
+                const value = parseFloat(this.getAttribute("data-value"));
+                rating = (rating === value) ? value - 0.5 : value;
+                updateStars();
+                ratings[currentAlbum] = rating;
+                displayRatedAlbums();
+            });
+        });
+
+        displayAlbums();
+    </script>
+</body>
+</html>
